@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { AppMode, UserStats } from './types';
 import { loadUserStats, saveUserStats } from './utils/storage';
 import { initializeOfflineCache } from './utils/offlineStorage';
+import { syncBadgeProgress } from './utils/badges';
 import { Header } from './components/Header';
 import { HomeScreen } from './components/HomeScreen';
 import { ExamSetsView } from './components/ExamSetsView';
@@ -26,7 +27,11 @@ import { ThemeProvider, useTheme } from './context/ThemeContext';
 function MainContent() {
   const { isLight, isSepia, fontSize } = useTheme();
   const [currentMode, setCurrentMode] = useState<AppMode>('home');
-  const [stats, setStats] = useState<UserStats>(() => loadUserStats());
+  const [stats, setStats] = useState<UserStats>(() => {
+    const initial = loadUserStats();
+    const { updatedStats } = syncBadgeProgress(initial);
+    return updatedStats;
+  });
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [showOfflineModal, setShowOfflineModal] = useState(false);
 
@@ -41,7 +46,11 @@ function MainContent() {
   }, [stats]);
 
   const updateStats = (updater: (prev: UserStats) => UserStats) => {
-    setStats(prev => updater(prev));
+    setStats(prev => {
+      const next = updater(prev);
+      const { updatedStats } = syncBadgeProgress(next);
+      return updatedStats;
+    });
   };
 
   const handleResetProgress = () => {
@@ -53,10 +62,13 @@ function MainContent() {
       mistakeIds: [],
       completedQuizzesCount: 0,
       bestQuizScore: 0,
-      badges: ['🌍 Tân binh thám hiểm']
+      badges: ['🌍 Tân binh thám hiểm'],
+      unlockedBadgeIds: ['first_step'],
+      perfectScoresCount: 0
     };
-    setStats(initialStats);
-    saveUserStats(initialStats);
+    const { updatedStats } = syncBadgeProgress(initialStats);
+    setStats(updatedStats);
+    saveUserStats(updatedStats);
     sounds.playClick();
   };
 

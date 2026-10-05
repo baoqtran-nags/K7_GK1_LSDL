@@ -10,7 +10,9 @@ const DEFAULT_STATS: UserStats = {
   mistakeIds: [],
   completedQuizzesCount: 0,
   bestQuizScore: 0,
-  badges: ['🌍 Tân binh thám hiểm']
+  badges: ['🌍 Tân binh thám hiểm'],
+  unlockedBadgeIds: ['first_step'],
+  perfectScoresCount: 0
 };
 
 export function loadUserStats(): UserStats {

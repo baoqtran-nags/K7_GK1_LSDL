@@ -20,7 +20,8 @@ import {
   Type,
   Wifi,
   WifiOff,
-  HardDrive
+  HardDrive,
+  Trophy
 } from 'lucide-react';
 import { sounds } from '../utils/audio';
 import { useTheme } from '../context/ThemeContext';
@@ -302,6 +303,30 @@ export const Header: React.FC<HeaderProps> = ({
               <Sparkles className="w-4 h-4 text-indigo-500 fill-indigo-500/20" />
               <span>{stats.xp} XP</span>
             </div>
+
+            {/* Badge Counter */}
+            <button 
+              onClick={() => {
+                sounds.playClick();
+                setMode('home');
+                setTimeout(() => {
+                  const el = document.getElementById('badge-collection-section');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }}
+              title="Bộ sưu tập huy hiệu & thành tựu"
+              className={`flex items-center gap-1 sm:gap-1.5 px-2.5 py-1 rounded-full text-xs sm:text-sm font-bold shadow-sm transition-all hover:scale-105 active:scale-95 ${
+                isLight 
+                  ? "bg-amber-50 border border-amber-300 text-amber-800 hover:bg-amber-100" 
+                  : isSepia 
+                    ? "bg-[#E6DAC3] border border-[#C5B396] text-[#3A2A18] hover:bg-[#DBCFB8]" 
+                    : "bg-amber-500/15 border border-amber-500/30 text-amber-300 hover:bg-amber-500/25"
+              }`}
+            >
+              <Trophy className="w-4 h-4 text-amber-500 fill-amber-500/30" />
+              <span className="hidden sm:inline">{stats.badges?.length || 1} Huy hiệu</span>
+              <span className="sm:hidden">{stats.badges?.length || 1}</span>
+            </button>
 
             {/* Offline Cache Manager Trigger */}
             {onOpenOfflineModal && (

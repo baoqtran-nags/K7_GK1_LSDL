@@ -58,6 +58,25 @@ export interface EssayTopic {
   mnemonic: string;
 }
 
+export type BadgeTier = 'bronze' | 'silver' | 'gold' | 'diamond';
+export type BadgeCategory = 'quiz' | 'mastery' | 'streak' | 'special';
+
+export interface Badge {
+  id: string;
+  name: string;
+  englishTitle?: string;
+  description: string;
+  icon: string;
+  category: BadgeCategory;
+  tier: BadgeTier;
+  milestoneTarget: number;
+  currentProgress: number;
+  isUnlocked: boolean;
+  unlockedAt?: string;
+  conditionDescription: string;
+  xpReward: number;
+}
+
 export interface UserStats {
   xp: number;
   streak: number;
@@ -67,6 +86,9 @@ export interface UserStats {
   completedQuizzesCount: number;
   bestQuizScore: number;
   badges: string[];
+  unlockedBadgeIds?: string[];
+  perfectScoresCount?: number;
+  lastUnlockedBadgeId?: string;
 }
 
 export interface QuizResult {

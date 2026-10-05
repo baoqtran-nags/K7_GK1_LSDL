@@ -22,6 +22,8 @@ import {
 } from 'lucide-react';
 import { sounds } from '../utils/audio';
 import { useTheme } from '../context/ThemeContext';
+import { BadgeCollection } from './BadgeCollection';
+import { getBadgesWithStatus } from '../utils/badges';
 
 interface HomeScreenProps {
   setMode: (mode: AppMode) => void;
@@ -233,6 +235,35 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setMode, stats }) => {
               </div>
             </div>
 
+            {/* Quick Badge Showcase Button in Hero Stats */}
+            {(() => {
+              const allBadges = getBadgesWithStatus(stats);
+              const unlocked = allBadges.filter(b => b.isUnlocked).length;
+              return (
+                <div 
+                  onClick={() => {
+                    sounds.playClick();
+                    const el = document.getElementById('badge-collection-section');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="cursor-pointer bg-gradient-to-r from-amber-500/20 to-indigo-500/20 hover:from-amber-500/30 hover:to-indigo-500/30 border border-amber-400/40 rounded-xl p-2.5 flex items-center justify-between transition-all group"
+                >
+                  <div className="flex items-center gap-2">
+                    <Trophy className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
+                    <div>
+                      <p className="text-[10px] text-amber-300 font-bold uppercase tracking-wider">Huy hiệu thành tựu</p>
+                      <p className="text-xs font-black text-white">
+                        {unlocked} / {allBadges.length} Đã mở khóa
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold text-amber-300 group-hover:underline flex items-center gap-0.5">
+                    Xem kho ↓
+                  </span>
+                </div>
+              );
+            })()}
+
             {stats.mistakeIds.length > 0 && (
               <button
                 onClick={() => { sounds.playClick(); setMode('smart_review'); }}
@@ -244,6 +275,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ setMode, stats }) => {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Visual Badge Collection System */}
+      <div id="badge-collection-section">
+        <BadgeCollection stats={stats} setMode={setMode} />
       </div>
 
       {/* Hành trình ôn tập 5 Chặng (Roadmap) */}

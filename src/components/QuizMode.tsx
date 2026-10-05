@@ -147,8 +147,9 @@ export const QuizMode: React.FC<QuizModeProps> = ({ stats, updateStats, onOpenSm
       return {
         ...prev,
         xp: prev.xp + gainedXP,
-        completedQuizzesCount: prev.completedQuizzesCount + 1,
-        bestQuizScore: Math.max(prev.bestQuizScore, correctCount),
+        completedQuizzesCount: (prev.completedQuizzesCount || 0) + 1,
+        bestQuizScore: Math.max(prev.bestQuizScore || 0, correctCount),
+        perfectScoresCount: correctCount === 40 ? ((prev.perfectScoresCount || 0) + 1) : (prev.perfectScoresCount || 0),
         mistakeIds: updatedMistakes,
         masteredIds: updatedMastered,
         badges: newBadges
