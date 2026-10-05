@@ -17,10 +17,15 @@ import {
   Moon,
   Book,
   Eye,
-  Type
+  Type,
+  Wifi,
+  WifiOff,
+  HardDrive
 } from 'lucide-react';
 import { sounds } from '../utils/audio';
 import { useTheme } from '../context/ThemeContext';
+import { PWAInstallButton } from './PWAInstallButton';
+import { useOnlineStatus } from '../hooks/useOnlineStatus';
 
 interface HeaderProps {
   currentMode: AppMode;
@@ -29,6 +34,7 @@ interface HeaderProps {
   soundEnabled: boolean;
   setSoundEnabled: (enabled: boolean) => void;
   onResetProgress: () => void;
+  onOpenOfflineModal?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -37,7 +43,8 @@ export const Header: React.FC<HeaderProps> = ({
   stats,
   soundEnabled,
   setSoundEnabled,
-  onResetProgress
+  onResetProgress,
+  onOpenOfflineModal
 }) => {
   const { 
     theme, 
@@ -50,6 +57,7 @@ export const Header: React.FC<HeaderProps> = ({
     isSepia
   } = useTheme();
 
+  const isOnline = useOnlineStatus();
   const [showThemeMenu, setShowThemeMenu] = useState(false);
 
   const toggleSound = () => {
@@ -294,6 +302,38 @@ export const Header: React.FC<HeaderProps> = ({
               <Sparkles className="w-4 h-4 text-indigo-500 fill-indigo-500/20" />
               <span>{stats.xp} XP</span>
             </div>
+
+            {/* Offline Cache Manager Trigger */}
+            {onOpenOfflineModal && (
+              <button
+                onClick={() => { sounds.playClick(); onOpenOfflineModal(); }}
+                title={isOnline ? "Kho ngoại tuyến: 4 bộ đề & ngân hàng câu sai" : "Đang chạy ngoại tuyến không cần mạng"}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
+                  !isOnline
+                    ? "bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-400 animate-pulse"
+                    : isLight
+                      ? "bg-emerald-500/10 text-emerald-800 border-emerald-300 hover:bg-emerald-500/20"
+                      : isSepia
+                        ? "bg-[#DDECD7] text-[#2C4A28] border-[#B8D4B0] hover:bg-[#D2E4CB]"
+                        : "bg-slate-800 text-emerald-400 border-slate-700 hover:bg-slate-700"
+                }`}
+              >
+                {isOnline ? (
+                  <>
+                    <HardDrive className="w-3.5 h-3.5 text-emerald-500" />
+                    <span className="hidden lg:inline text-[11px]">Kho Offline</span>
+                  </>
+                ) : (
+                  <>
+                    <WifiOff className="w-3.5 h-3.5 text-amber-500" />
+                    <span className="text-[11px] font-bold">Offline</span>
+                  </>
+                )}
+              </button>
+            )}
+
+            {/* PWA Install Button */}
+            <PWAInstallButton />
 
             {/* Sound Toggle */}
             <button

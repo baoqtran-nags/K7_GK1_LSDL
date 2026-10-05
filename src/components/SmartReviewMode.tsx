@@ -6,7 +6,8 @@ import {
   CheckCircle2, 
   XCircle, 
   ChevronRight,
-  Sparkles
+  Sparkles,
+  HardDrive
 } from 'lucide-react';
 import { sounds } from '../utils/audio';
 import { useTheme } from '../context/ThemeContext';
@@ -94,6 +95,9 @@ export const SmartReviewMode: React.FC<SmartReviewModeProps> = ({
           <div className="flex items-center gap-2">
             <span className="px-2 py-0.5 rounded text-[11px] font-black bg-rose-500/15 text-rose-800 dark:text-rose-300 border border-rose-500/30">
               SMART REVIEW
+            </span>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+              <HardDrive className="w-3 h-3" /> Sẵn sàng Offline
             </span>
             <h2 className={`text-2xl font-black flex items-center gap-2 ${headingColor}`}>
               <AlertCircle className="w-6 h-6 text-rose-500" />

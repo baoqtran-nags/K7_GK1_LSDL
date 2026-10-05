@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { AppMode, UserStats } from './types';
 import { loadUserStats, saveUserStats } from './utils/storage';
+import { initializeOfflineCache } from './utils/offlineStorage';
 import { Header } from './components/Header';
 import { HomeScreen } from './components/HomeScreen';
 import { ExamSetsView } from './components/ExamSetsView';
@@ -17,6 +18,8 @@ import { EssayMode } from './components/EssayMode';
 import { SmartReviewMode } from './components/SmartReviewMode';
 import { DataPipelineModal } from './components/DataPipelineModal';
 import { TechSpecModal } from './components/TechSpecModal';
+import { OfflineIndicator } from './components/OfflineIndicator';
+import { OfflineManagerModal } from './components/OfflineManagerModal';
 import { sounds } from './utils/audio';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 
@@ -25,6 +28,12 @@ function MainContent() {
   const [currentMode, setCurrentMode] = useState<AppMode>('home');
   const [stats, setStats] = useState<UserStats>(() => loadUserStats());
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [showOfflineModal, setShowOfflineModal] = useState(false);
+
+  // Initialize offline cache for PWA access
+  useEffect(() => {
+    initializeOfflineCache();
+  }, []);
 
   // Sync stats to localStorage whenever they change
   useEffect(() => {
@@ -74,6 +83,7 @@ function MainContent() {
         soundEnabled={soundEnabled}
         setSoundEnabled={setSoundEnabled}
         onResetProgress={handleResetProgress}
+        onOpenOfflineModal={() => setShowOfflineModal(true)}
       />
 
       {/* Main Content Area */}
@@ -83,7 +93,7 @@ function MainContent() {
         )}
 
         {currentMode === 'exam_sets' && (
-          <ExamSetsView />
+          <ExamSetsView onOpenOfflineModal={() => setShowOfflineModal(true)} />
         )}
 
         {currentMode === 'flashcard' && (
@@ -126,6 +136,18 @@ function MainContent() {
           <TechSpecModal />
         )}
       </main>
+
+      {/* Offline Status Floating Indicator */}
+      <OfflineIndicator onOpenOfflineManager={() => setShowOfflineModal(true)} />
+
+      {/* Offline Manager Modal */}
+      <OfflineManagerModal 
+        isOpen={showOfflineModal} 
+        onClose={() => setShowOfflineModal(false)}
+        onSelectExam={(id) => {
+          setCurrentMode('exam_sets');
+        }}
+      />
 
       {/* Theme-Aware Footer */}
       <footer className={`py-4 text-center text-xs transition-colors border-t ${

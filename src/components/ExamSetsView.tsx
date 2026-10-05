@@ -16,17 +16,27 @@ import {
   Layers, 
   Map, 
   Eye, 
-  EyeOff
+  EyeOff,
+  HardDrive,
+  DownloadCloud
 } from 'lucide-react';
 import { sounds } from '../utils/audio';
 import { useTheme } from '../context/ThemeContext';
+import { isExamDownloaded, saveExamForOffline, getDownloadedExamIds } from '../utils/offlineStorage';
 
-export const ExamSetsView: React.FC = () => {
+interface ExamSetsViewProps {
+  onOpenOfflineModal?: () => void;
+}
+
+export const ExamSetsView: React.FC<ExamSetsViewProps> = ({ onOpenOfflineModal }) => {
   const { isLight, isSepia } = useTheme();
   const [selectedExamId, setSelectedExamId] = useState<string>('de-01');
   const [categoryFilter, setCategoryFilter] = useState<'all' | QuestionCategory>('all');
   const [showAnswers, setShowAnswers] = useState<boolean>(true);
   const [copied, setCopied] = useState<boolean>(false);
+  const [offlineUpdated, setOfflineUpdated] = useState<number>(0);
+
+  const downloadedIds = getDownloadedExamIds();
 
   const currentExam: ExamSet = ALL_EXAM_SETS.find(e => e.id === selectedExamId) || ALL_EXAM_SETS[0];
 
@@ -79,7 +89,18 @@ export const ExamSetsView: React.FC = () => {
         </div>
 
         {/* Global Toolbar */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {onOpenOfflineModal && (
+            <button
+              onClick={() => { sounds.playClick(); onOpenOfflineModal(); }}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 transition shadow-xs"
+              title="Quản lý bộ nhớ ngoại tuyến PWA"
+            >
+              <HardDrive className="w-4 h-4 text-emerald-500" />
+              <span>Kho Offline ({downloadedIds.length}/4 Đề)</span>
+            </button>
+          )}
+
           <button
             onClick={() => { sounds.playClick(); setShowAnswers(!showAnswers); }}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-colors shadow-xs ${
@@ -141,9 +162,18 @@ export const ExamSetsView: React.FC = () => {
                 }`}>
                   ĐỀ SỐ 0{idx + 1}
                 </span>
-                <span className={`text-[11px] font-bold ${isSelected ? "text-indigo-100" : mutedTextColor}`}>
-                  30 câu • 45p
-                </span>
+                <div className="flex items-center gap-1.5">
+                  {downloadedIds.includes(exam.id) && (
+                    <span className={`text-[10px] font-bold flex items-center gap-0.5 ${
+                      isSelected ? "text-emerald-200" : "text-emerald-600 dark:text-emerald-400"
+                    }`}>
+                      <CheckCircle2 className="w-3 h-3" /> Offline
+                    </span>
+                  )}
+                  <span className={`text-[11px] font-bold ${isSelected ? "text-indigo-100" : mutedTextColor}`}>
+                    30 câu
+                  </span>
+                </div>
               </div>
               <h3 className="font-extrabold text-sm line-clamp-1">{exam.title}</h3>
               <p className={`text-xs mt-1 line-clamp-2 ${isSelected ? "text-indigo-100/90" : mutedTextColor}`}>
