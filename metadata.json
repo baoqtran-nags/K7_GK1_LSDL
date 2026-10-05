@@ -1,0 +1,6 @@
+{
+  "name": "FlashGeography Class 7 - Ôn tập Lịch sử & Địa lý Châu Âu",
+  "description": "Ứng dụng EdTech ôn tập kiến thức Lịch sử & Địa lý Lớp 7 chuyên đề Châu Âu: Vị trí địa lý, Tự nhiên, Dân cư, Đô thị hóa, Lịch sử Trung đại và Phong trào Phục hưng với Flashcard, Quiz trắc nghiệm, Ngân hàng câu sai và Gamification.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

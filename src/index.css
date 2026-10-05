@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  .transform-style-3d {
+    transform-style: preserve-3d;
+  }
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
+  .rotate-y-180 {
+    transform: rotateY(180deg);
+  }
+}
+
+/* Custom smooth scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.35);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.7);
+}
+
+/* Eye-care Theme Specific overrides */
+.theme-light {
+  --bg-app: #F7F5EE;
+  --bg-surface: #FFFFFF;
+  --bg-surface-elevated: #F1EFE6;
+  --text-main: #1E293B;
+  --text-muted: #64748B;
+  --border-color: #E2DDD3;
+  --border-hover: #CBD5E1;
+}
+
+.theme-sepia {
+  --bg-app: #EFE6D5;
+  --bg-surface: #F8F3E8;
+  --bg-surface-elevated: #E7DDCA;
+  --text-main: #2E2416;
+  --text-muted: #65543D;
+  --border-color: #DDD0B9;
+  --border-hover: #C5B69B;
+}
+
+.theme-dark {
+  --bg-app: #0F172A;
+  --bg-surface: #1E293B;
+  --bg-surface-elevated: #334155;
+  --text-main: #F8FAFC;
+  --text-muted: #94A3B8;
+  --border-color: #334155;
+  --border-hover: #475569;
+}
+
+/* Blue light filter tint */
+.blue-light-filter-active {
+  filter: sepia(14%) brightness(98%);
+}
+
+/* Font Size Scales */
+.font-size-large {
+  font-size: 110%;
+}
+
+.font-size-xlarge {
+  font-size: 120%;
+}
