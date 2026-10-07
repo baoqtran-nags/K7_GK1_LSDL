@@ -16,7 +16,7 @@ import {
   Info
 } from 'lucide-react';
 import { sounds } from '../utils/audio';
-import confetti from 'canvas-confetti';
+import { launchFireworksConfetti, launchStandardConfetti } from '../utils/confetti';
 import { useTheme } from '../context/ThemeContext';
 
 interface BadgeCollectionProps {
@@ -49,14 +49,10 @@ export const BadgeCollection: React.FC<BadgeCollectionProps> = ({ stats, setMode
     sounds.playClick();
     setActiveBadgeModal(badge);
     if (badge.isUnlocked) {
-      try {
-        confetti({
-          particleCount: 50,
-          spread: 60,
-          origin: { y: 0.7 }
-        });
-      } catch {
-        // fallback
+      if (badge.id === 'perfect_score' || badge.tier === 'diamond') {
+        launchFireworksConfetti(3500);
+      } else {
+        launchStandardConfetti();
       }
     }
   };

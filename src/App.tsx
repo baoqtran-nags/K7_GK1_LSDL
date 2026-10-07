@@ -23,6 +23,7 @@ import { OfflineIndicator } from './components/OfflineIndicator';
 import { OfflineManagerModal } from './components/OfflineManagerModal';
 import { sounds } from './utils/audio';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
+import { QuestionProvider } from './context/QuestionContext';
 
 function MainContent() {
   const { isLight, isSepia, fontSize } = useTheme();
@@ -188,7 +189,9 @@ function MainContent() {
 export default function App() {
   return (
     <ThemeProvider>
-      <MainContent />
+      <QuestionProvider>
+        <MainContent />
+      </QuestionProvider>
     </ThemeProvider>
   );
 }

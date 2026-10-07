@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Question, SubjectType, UserStats } from '../types';
-import { QUESTIONS_DATA } from '../data/questions';
+import { useQuestions } from '../context/QuestionContext';
 import { 
   RotateCw, 
   Check, 
@@ -24,20 +24,21 @@ interface FlashcardModeProps {
 
 export const FlashcardMode: React.FC<FlashcardModeProps> = ({ stats, updateStats }) => {
   const { isLight, isSepia } = useTheme();
+  const { questions, shuffleNewQuestions } = useQuestions();
   const [filterSubject, setFilterSubject] = useState<'All' | SubjectType>('All');
-  const [cardList, setCardList] = useState<Question[]>(QUESTIONS_DATA);
+  const [cardList, setCardList] = useState<Question[]>(() => questions);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
 
-  // Update card list when filter changes
+  // Update card list when filter or questions change
   useEffect(() => {
     const list = filterSubject === 'All' 
-      ? QUESTIONS_DATA 
-      : QUESTIONS_DATA.filter(q => q.subject === filterSubject);
+      ? questions 
+      : questions.filter(q => q.subject === filterSubject);
     setCardList(list);
     setCurrentIndex(0);
     setIsFlipped(false);
-  }, [filterSubject]);
+  }, [filterSubject, questions]);
 
   const currentQuestion = cardList[currentIndex] || cardList[0];
   const total = cardList.length;
@@ -61,8 +62,7 @@ export const FlashcardMode: React.FC<FlashcardModeProps> = ({ stats, updateStats
 
   const handleShuffle = () => {
     sounds.playClick();
-    const shuffled = [...cardList].sort(() => Math.random() - 0.5);
-    setCardList(shuffled);
+    shuffleNewQuestions();
     setCurrentIndex(0);
     setIsFlipped(false);
   };

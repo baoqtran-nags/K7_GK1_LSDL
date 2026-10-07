@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { OptionKey, UserStats } from '../types';
-import { QUESTIONS_DATA } from '../data/questions';
+import { useQuestions } from '../context/QuestionContext';
 import { 
   Timer, 
   CheckCircle2, 
@@ -13,9 +13,11 @@ import {
   Send, 
   RotateCcw, 
   Sparkles, 
-  Play
+  Play,
+  Shuffle,
+  Flame
 } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import { launchFireworksConfetti, launchStandardConfetti } from '../utils/confetti';
 import { sounds } from '../utils/audio';
 import { useTheme } from '../context/ThemeContext';
 
@@ -27,6 +29,16 @@ interface QuizModeProps {
 
 export const QuizMode: React.FC<QuizModeProps> = ({ stats, updateStats, onOpenSmartReview }) => {
   const { isLight, isSepia } = useTheme();
+  const { 
+    questions, 
+    isShuffled, 
+    shuffleChoices,
+    shuffleGeneration, 
+    shuffleTimestamp, 
+    shuffleNewQuestions,
+    toggleShuffle 
+  } = useQuestions();
+
   const [quizStarted, setQuizStarted] = useState(false);
   const [timerModeMinutes, setTimerModeMinutes] = useState<number>(30); // 15, 30, 45, 0 (no limit)
   const [feedbackMode, setFeedbackMode] = useState<'instant' | 'exam'>('instant');
@@ -75,7 +87,7 @@ export const QuizMode: React.FC<QuizModeProps> = ({ stats, updateStats, onOpenSm
 
   const handleSelectOption = (option: OptionKey) => {
     if (isSubmitted) return;
-    const qId = QUESTIONS_DATA[currentIdx].id;
+    const qId = questions[currentIdx].id;
     
     // In instant mode, if already answered, don't change
     if (feedbackMode === 'instant' && userAnswers[qId]) return;
@@ -87,7 +99,7 @@ export const QuizMode: React.FC<QuizModeProps> = ({ stats, updateStats, onOpenSm
     }));
 
     if (feedbackMode === 'instant') {
-      const isCorrect = option === QUESTIONS_DATA[currentIdx].correct_answer;
+      const isCorrect = option === questions[currentIdx].correct_answer;
       if (isCorrect) {
         sounds.playCorrect();
       } else {
@@ -100,25 +112,13 @@ export const QuizMode: React.FC<QuizModeProps> = ({ stats, updateStats, onOpenSm
     if (isSubmitted) return;
     if (timerRef.current) clearInterval(timerRef.current);
     setIsSubmitted(true);
-    sounds.playFanfare();
-
-    // Trigger celebration confetti
-    try {
-      confetti({
-        particleCount: 120,
-        spread: 80,
-        origin: { y: 0.6 }
-      });
-    } catch {
-      // fallback
-    }
 
     // Evaluate results
     let correctCount = 0;
     const wrongIds: number[] = [];
     const correctIds: number[] = [];
 
-    QUESTIONS_DATA.forEach(q => {
+    questions.forEach(q => {
       const ans = userAnswers[q.id];
       if (ans === q.correct_answer) {
         correctCount++;
@@ -128,7 +128,20 @@ export const QuizMode: React.FC<QuizModeProps> = ({ stats, updateStats, onOpenSm
       }
     });
 
-    const gainedXP = correctCount * 20 + 50;
+    const isPerfect = correctCount === questions.length;
+
+    // Trigger fireworks confetti when user answers all questions correctly (Perfect score)
+    if (isPerfect) {
+      sounds.playVictoryFanfare();
+      launchFireworksConfetti(5000);
+    } else {
+      sounds.playFanfare();
+      if (correctCount >= Math.round(questions.length * 0.7)) {
+        launchStandardConfetti();
+      }
+    }
+
+    const gainedXP = correctCount * 20 + (isPerfect ? 150 : 50);
 
     // Update global user stats
     updateStats(prev => {
@@ -163,8 +176,8 @@ export const QuizMode: React.FC<QuizModeProps> = ({ stats, updateStats, onOpenSm
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const currentQ = QUESTIONS_DATA[currentIdx];
-  const total = QUESTIONS_DATA.length;
+  const currentQ = questions[currentIdx];
+  const total = questions.length;
   const answeredCount = Object.keys(userAnswers).length;
 
   const cardBgClass = isLight 
@@ -276,6 +289,63 @@ export const QuizMode: React.FC<QuizModeProps> = ({ stats, updateStats, onOpenSm
             </div>
           </div>
 
+          {/* Auto Shuffled 40 Questions Notice & Re-roll Button */}
+          <div className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+            isShuffled 
+              ? (isLight ? "bg-purple-50/80 border-purple-200" : "bg-purple-950/30 border-purple-500/40")
+              : (isLight ? "bg-stone-50 border-stone-200" : "bg-slate-900 border-slate-700")
+          }`}>
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                isShuffled ? "bg-purple-600 text-white shadow-md shadow-purple-500/30" : "bg-stone-300 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
+              }`}>
+                <Shuffle className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-black uppercase tracking-wider ${
+                    isShuffled ? "text-purple-700 dark:text-purple-300" : headingColor
+                  }`}>
+                    {isShuffled ? `🎲 Tự động xáo trộn 40 câu mới (Đợt #${shuffleGeneration})` : "Thứ tự câu hỏi gốc SGK"}
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-bold">
+                    {shuffleChoices ? "Xáo cả đáp án A-B-C-D" : "Giữ nguyên đáp án"}
+                  </span>
+                </div>
+                <p className={`text-xs mt-0.5 ${mutedTextColor}`}>
+                  {isShuffled 
+                    ? `40 câu hỏi được tạo ngẫu nhiên lúc ${shuffleTimestamp}. Bạn có thể bấm xáo trộn để đổi đề mới bất cứ lúc nào!`
+                    : "Đang hiển thị theo thứ tự bài học gốc 1 đến 40 trong SGK."}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => shuffleNewQuestions()}
+                className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-md shadow-purple-500/20 flex items-center gap-1.5 transition-all hover:scale-102 active:scale-98"
+                title="Tạo ngẫu nhiên 40 câu hỏi mới ngay"
+              >
+                <Shuffle className="w-3.5 h-3.5" />
+                <span>Xáo trộn 40 câu mới</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => toggleShuffle()}
+                className={`px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${
+                  !isShuffled 
+                    ? "bg-indigo-600 text-white border-indigo-500" 
+                    : isLight ? "bg-white text-slate-700 border-stone-200 hover:bg-stone-100" : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700"
+                }`}
+                title="Bật/Tắt chế độ xáo trộn"
+              >
+                {isShuffled ? "Về thứ tự gốc" : "Bật xáo trộn"}
+              </button>
+            </div>
+          </div>
+
           {/* Exam Summary Notice */}
           <div className={`p-4 rounded-2xl border text-xs space-y-1.5 ${
             isLight 
@@ -300,7 +370,7 @@ export const QuizMode: React.FC<QuizModeProps> = ({ stats, updateStats, onOpenSm
             className="w-full py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-amber-500 hover:from-indigo-700 hover:to-amber-600 text-white font-black text-base shadow-xl shadow-indigo-600/30 transition-all hover:scale-101 active:scale-99 flex items-center justify-center gap-2"
           >
             <Play className="w-5 h-5 fill-current" />
-            <span>BẮT ĐẦU LÀM BÀI (40 CÂU)</span>
+            <span>BẮT ĐẦU LÀM BÀI (40 CÂU MỚI)</span>
           </button>
         </div>
       </div>
@@ -310,7 +380,7 @@ export const QuizMode: React.FC<QuizModeProps> = ({ stats, updateStats, onOpenSm
   // RESULT SCREEN (After submission)
   if (isSubmitted) {
     let correctCount = 0;
-    QUESTIONS_DATA.forEach(q => {
+    questions.forEach(q => {
       if (userAnswers[q.id] === q.correct_answer) correctCount++;
     });
     const percentage = Math.round((correctCount / total) * 100);
@@ -357,6 +427,38 @@ export const QuizMode: React.FC<QuizModeProps> = ({ stats, updateStats, onOpenSm
             </div>
           </div>
 
+          {/* Perfect Score Special Fireworks Celebration Card */}
+          {correctCount === total && (
+            <div className={`mt-6 p-4 rounded-2xl border-2 border-amber-400/60 max-w-2xl mx-auto ${
+              isLight 
+                ? "bg-gradient-to-r from-amber-100/90 via-yellow-50 to-amber-100/90 text-amber-950 shadow-md" 
+                : "bg-gradient-to-r from-amber-950/60 via-purple-950/50 to-amber-950/60 text-amber-200 shadow-xl"
+            }`}>
+              <div className="flex items-center justify-center gap-2 font-black text-sm uppercase tracking-wider text-amber-600 dark:text-amber-300">
+                <span className="text-xl">🎆</span>
+                <span>HIỆU ỨNG PHÁO HOA THỦ KHOA: ĐÚNG TẤT CẢ 40/40 CÂU!</span>
+                <span className="text-xl">🎆</span>
+              </div>
+              <p className={`text-xs mt-1.5 leading-relaxed ${isLight ? "text-stone-700" : "text-slate-300"}`}>
+                Tuyệt đỉnh! Bạn đã vượt qua toàn bộ 40 câu hỏi mà không phạm bất kỳ sai sót nào. Danh hiệu <strong>🏆 Quán quân 40/40</strong> và huy hiệu <strong>💯 Điểm Tuyệt Đối</strong> đã được ghi nhận vào hồ sơ của bạn.
+              </p>
+              <div className="mt-3 flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playVictoryFanfare();
+                    launchFireworksConfetti(5000);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-rose-500 to-purple-600 hover:from-amber-600 hover:to-purple-700 text-white font-extrabold text-xs shadow-lg shadow-amber-500/30 flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
+                >
+                  <span>🎆</span>
+                  <span>Bắn pháo hoa ăn mừng lại</span>
+                  <span>✨</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Action CTAs */}
           <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
             {wrongCount > 0 && (
@@ -370,7 +472,7 @@ export const QuizMode: React.FC<QuizModeProps> = ({ stats, updateStats, onOpenSm
 
             <button
               onClick={startQuiz}
-              className={`px-6 py-3 rounded-xl font-bold text-sm border transition-all hover:scale-102 flex items-center gap-2 ${
+              className={`px-5 py-3 rounded-xl font-bold text-sm border transition-all hover:scale-102 flex items-center gap-2 ${
                 isLight 
                   ? "bg-white hover:bg-stone-100 text-slate-800 border-stone-300 shadow-sm" 
                   : isSepia 
@@ -379,7 +481,18 @@ export const QuizMode: React.FC<QuizModeProps> = ({ stats, updateStats, onOpenSm
               }`}
             >
               <RotateCcw className="w-4 h-4" />
-              <span>Làm lại đề mới</span>
+              <span>Làm lại bộ đề này</span>
+            </button>
+
+            <button
+              onClick={() => {
+                shuffleNewQuestions();
+                startQuiz();
+              }}
+              className="px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-black text-sm shadow-lg shadow-purple-600/30 flex items-center gap-2 transition-all hover:scale-102"
+            >
+              <Shuffle className="w-4 h-4" />
+              <span>Xáo trộn 40 câu mới & làm bài</span>
             </button>
           </div>
         </div>
@@ -394,7 +507,7 @@ export const QuizMode: React.FC<QuizModeProps> = ({ stats, updateStats, onOpenSm
           </div>
 
           <div className="space-y-3">
-            {QUESTIONS_DATA.map((q) => {
+            {questions.map((q, qIdx) => {
               const userAns = userAnswers[q.id];
               const isCorrect = userAns === q.correct_answer;
               const isSpecial = q.id === 14;
@@ -413,10 +526,13 @@ export const QuizMode: React.FC<QuizModeProps> = ({ stats, updateStats, onOpenSm
                       <span className={`w-7 h-7 rounded-lg font-black text-xs flex items-center justify-center ${
                         isCorrect ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" : "bg-rose-500/15 text-rose-700 dark:text-rose-300"
                       }`}>
-                        {q.id}
+                        {qIdx + 1}
                       </span>
                       <span className={`text-xs font-bold ${headingColor}`}>
                         {q.subject} • {q.topic}
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-mono">
+                        (Gốc: #{q.id})
                       </span>
                       {isSpecial && (
                         <span className="text-[10px] font-black px-2 py-0.5 bg-cyan-500 text-white rounded">
@@ -716,7 +832,7 @@ export const QuizMode: React.FC<QuizModeProps> = ({ stats, updateStats, onOpenSm
         </div>
 
         <div className="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-20 gap-1.5">
-          {QUESTIONS_DATA.map((q, idx) => {
+          {questions.map((q, idx) => {
             const isCurrent = idx === currentIdx;
             const ans = userAnswers[q.id];
             const isDone = ans !== undefined;
@@ -747,9 +863,10 @@ export const QuizMode: React.FC<QuizModeProps> = ({ stats, updateStats, onOpenSm
                   sounds.playClick();
                   setCurrentIdx(idx);
                 }}
+                title={`Câu ${idx + 1} • Gốc: #${q.id}`}
                 className={`h-9 rounded-lg text-xs font-bold transition-all border flex items-center justify-center relative ${btnStyle}`}
               >
-                {q.id}
+                {idx + 1}
                 {isSpecial && (
                   <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
                 )}

@@ -21,10 +21,12 @@ import {
   Wifi,
   WifiOff,
   HardDrive,
-  Trophy
+  Trophy,
+  Shuffle
 } from 'lucide-react';
 import { sounds } from '../utils/audio';
 import { useTheme } from '../context/ThemeContext';
+import { useQuestions } from '../context/QuestionContext';
 import { PWAInstallButton } from './PWAInstallButton';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 
@@ -59,6 +61,7 @@ export const Header: React.FC<HeaderProps> = ({
   } = useTheme();
 
   const isOnline = useOnlineStatus();
+  const { isShuffled, shuffleGeneration, shuffleTimestamp, shuffleNewQuestions } = useQuestions();
   const [showThemeMenu, setShowThemeMenu] = useState(false);
 
   const toggleSound = () => {
@@ -326,6 +329,26 @@ export const Header: React.FC<HeaderProps> = ({
               <Trophy className="w-4 h-4 text-amber-500 fill-amber-500/30" />
               <span className="hidden sm:inline">{stats.badges?.length || 1} Huy hiệu</span>
               <span className="sm:hidden">{stats.badges?.length || 1}</span>
+            </button>
+
+            {/* Quick Shuffle 40 Questions Button */}
+            <button
+              onClick={() => {
+                shuffleNewQuestions();
+              }}
+              title={`Tự động xáo trộn 40 câu hỏi mới mỗi lần vào web. Bấm để xáo trộn lại đợt mới (Hiện tại: Đợt #${shuffleGeneration} - ${shuffleTimestamp})`}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-all hover:scale-105 active:scale-95 ${
+                isShuffled
+                  ? (isLight 
+                      ? "bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100" 
+                      : isSepia 
+                        ? "bg-[#E6DAC3] text-[#3A2A18] border-[#C5B396] hover:bg-[#DBCFB8]" 
+                        : "bg-purple-500/15 text-purple-300 border-purple-500/30 hover:bg-purple-500/25")
+                  : (isLight ? "bg-stone-100 text-slate-600 border-stone-200" : "bg-slate-800 text-slate-400 border-slate-700")
+              }`}
+            >
+              <Shuffle className="w-3.5 h-3.5 text-purple-500" />
+              <span className="hidden md:inline text-[11px]">Xáo 40 câu</span>
             </button>
 
             {/* Offline Cache Manager Trigger */}
